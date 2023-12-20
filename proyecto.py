@@ -168,11 +168,14 @@ def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
 
 # P(BC | C = 100)
 
-estadoActual = "11"
+estadoActual = "1"
 #posicionEstadoActual = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
 
-proximos_a_eliminar = [0,1] # BC   C/C
+proximos_a_eliminar_origin = [0,2]
 columnas_a_eliminar_actual = []
+
+
+proximos_a_eliminar = proximos_a_eliminar_origin.copy() # BC   C/C
 
 diccionarioDescomposicion = {}
 
@@ -186,11 +189,23 @@ if len(str(estadoActual)) == 3:
     print("SOLUCION :")
     print(matrizMarginadoProximos[posicionSolucion])
     
+#Proceso cuando hay un vacio en estado actual   
 elif not columnas_a_eliminar_actual:
     matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar)
     resultadoVacioActual= eliminarVacioActual(matrizMarginadoProximos)
-    print("TOTAL DE LOS TOTALES")
+    print("TOTAL cuando hay un vacio en estado actual")
     print(resultadoVacioActual)
+
+#Proceso cuando hay un vacio en estado proximo  
+elif not proximos_a_eliminar:
+    combinacion, matriz =  marginacionEstadoActual(columnas_a_eliminar_actual, trans_matrix)
+    resultadoVacioProximo= eliminarVacioProximo(matriz)
+    posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
+    print("Matriz resultante cuando hay un vacio en estado proximo ")
+    print(resultadoVacioProximo)
+    print("TOTAL cuando hay un vacio en estado proximo")
+    print(resultadoVacioProximo[posicionSolucion])
+
     
 else:
     listaSolucion = []
@@ -217,7 +232,7 @@ else:
     
 
       
-      matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar) #     0-1
+      matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar) 
       combinacion, matriz =  marginacionEstadoActual(columnas_a_eliminar_actual, matrizMarginadoProximos)
 
       posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
@@ -230,7 +245,7 @@ else:
 
       listaSolucion.append(matriz[posicionSolucion])
 
-      proximos_a_eliminar.pop()
+      proximos_a_eliminar = proximos_a_eliminar_origin.copy()
 
 
 
@@ -262,9 +277,15 @@ else:
               for elemento_3 in resultado_en_tuplas[2]:
                 resultado.append(elemento_1 * elemento_2 * elemento_3)
         print(resultado)
+        
+        
 
       else:
         print(resultado_en_tuplas)
+        
+
+
+
 
 
 
