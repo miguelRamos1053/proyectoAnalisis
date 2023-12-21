@@ -207,25 +207,54 @@ def conversorClaveAEstadosEliminar(lista):
               columnas_a_eliminar_actual.append(i - 3)
 
     return proximos_a_eliminar_origin, columnas_a_eliminar_actual
+  
+def conversorEstadosEliminarAClave(proximos_a_eliminar, columnas_a_eliminar_actual):
+    lista_resultante = [1,1,1,1,1,1]
+
+    if proximos_a_eliminar != []:
+      for i in proximos_a_eliminar:
+          lista_resultante[i] = 0
+    else:
+      lista_resultante[:3]= [0, 0, 0]
+
+    if columnas_a_eliminar_actual != []:
+      for i in columnas_a_eliminar_actual:
+          lista_resultante[i + 3] = 0
+    else:
+      lista_resultante[3:]= [0, 0, 0]
+      
+    return lista_resultante
+
+def productoTensor(resultado_en_tuplas):
+  if len(resultado_en_tuplas) == 2:
+    print("TOTAL DE LOS TOTALES")
+    for elemento_1 in resultado_en_tuplas[0]:
+        for elemento_2 in resultado_en_tuplas[1]:
+            resultado.append(elemento_1 * elemento_2)
+  elif len(resultado_en_tuplas) == 3:
+    print("TOTAL DE LOS TOTALES")
+    for elemento_1 in resultado_en_tuplas[0]:
+        for elemento_2 in resultado_en_tuplas[1]:
+          for elemento_3 in resultado_en_tuplas[2]:
+            resultado.append(elemento_1 * elemento_2 * elemento_3)
+  
+  return resultado
     
       
 
 
 # P(BC | C = 100)
 
-estadoActual = "10"
 #posicionEstadoActual = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
 
-proximos_a_eliminar_origin = [] #[0,1,0]
+estadoActual = "10"
+proximos_a_eliminar_origin = [0] #[0,1,0]
 columnas_a_eliminar_actual = [1]   #[0,1,1]
-
-
 proximos_a_eliminar = proximos_a_eliminar_origin.copy() # BC   C/C
 
+
 diccionarioDescomposicion = {}
-
 claveDescomposicion = [1,1,1,1,1,1]
-
 
 if len(str(estadoActual)) == 3:
     claveDescomposicion = [1,1,1,1,1,1]
@@ -287,9 +316,9 @@ else:
 
       mi_tupla_clave = tuple(claveDescomposicion)
       diccionarioDescomposicion[mi_tupla_clave] = matriz[posicionSolucion]
-
+      
       listaSolucion.append(matriz[posicionSolucion])
-
+   
       proximos_a_eliminar = proximos_a_eliminar_origin.copy()
 
 
@@ -298,7 +327,7 @@ else:
       matrizResultante = juntarProximosRepetidos(eliminar_proximos_sin_usar(combinaciones,proximos_a_eliminar))
       print(matrizResultante)
 
-      print("Solucion SUBTOTAL")
+      print("Solucion SUBTOTAL para aplicar tensor")
 
       # Convertir los arrays en tuplas
       resultado_en_tuplas = [tuple(arr) for arr in listaSolucion]
@@ -306,27 +335,11 @@ else:
       print(resultado_en_tuplas)
 
 
-      print("TOTAL DE LOS TOTALES")
+      
       resultado = []
-      
-      
 
-      if len(resultado_en_tuplas) == 2:
-        for elemento_1 in resultado_en_tuplas[0]:
-            for elemento_2 in resultado_en_tuplas[1]:
-                resultado.append(elemento_1 * elemento_2)
-        print(resultado)
-      elif len(resultado_en_tuplas) == 3:
-        for elemento_1 in resultado_en_tuplas[0]:
-            for elemento_2 in resultado_en_tuplas[1]:
-              for elemento_3 in resultado_en_tuplas[2]:
-                resultado.append(elemento_1 * elemento_2 * elemento_3)
-        print(resultado)
-        
-        
-
-      else:
-        print(resultado_en_tuplas)
+      print(productoTensor(resultado_en_tuplas))
+      
 
 print("LISTA DE DESCOMPOSICIONES REALIZADAS")
 
@@ -338,11 +351,11 @@ for clave, valor in diccionarioDescomposicion.items():
     
     
     
-  
 
-particiones = [
-  [[0, 1, 0, 0, 1, 1],[0, 0, 0, 0, 1, 1]],
-]
+
+claveDistribucionOriginal =  conversorEstadosEliminarAClave(proximos_a_eliminar_origin, columnas_a_eliminar_actual)  
+
+particiones = generarListaDescomposiciones(claveDistribucionOriginal)
 
 for particion in particiones:
     listSubResultadosParticionados = []
@@ -350,7 +363,9 @@ for particion in particiones:
       
       parteCombinacionEntrante = tuple(lista)
       
+      #Pregunta si esa composicion ya existe en el diccionario o no
       if parteCombinacionEntrante in diccionarioDescomposicion:
+        
         valor = diccionarioDescomposicion[parteCombinacionEntrante]
         
         listSubResultadosParticionados.append(valor)
@@ -363,3 +378,6 @@ for particion in particiones:
 
 
     
+#resultado = []
+#listaSolucion = [(0.5, 0.5), (1.0, 0.0)]
+#print(productoTensor(listaSolucion))
