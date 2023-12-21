@@ -2,6 +2,8 @@ import numpy as np
 import itertools
 from collections import defaultdict
 
+from scipy.stats import wasserstein_distance
+
 
 
 # Matriz de transición proporcionada
@@ -85,7 +87,7 @@ def eliminarVacioProximo(matriz):
 
 #-----------------------------------------
 
-def marginacionEstadoActual(columnas_a_eliminar_actual, matriz_proximo_eliminado): #[
+def marginacionEstadoActual(columnas_a_eliminar_actual, matriz_proximo_eliminado,claveDescomposicion): #[
   combinaciones_resultantes_columnas = combinaciones
   segundoEliminar = False
   for columna in columnas_a_eliminar_actual:
@@ -117,10 +119,10 @@ def marginacionEstadoActual(columnas_a_eliminar_actual, matriz_proximo_eliminado
       print(matriz_proximo_eliminado)
       
       
-  return combinaciones_resultantes_columnas, matriz_proximo_eliminado
+  return combinaciones_resultantes_columnas, matriz_proximo_eliminado,claveDescomposicion
 
 
-def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
+def marginacionEstadoProximo(proximos_a_eliminar,claveDescomposicion): #  ?/ABC  [?,?,?,1,1,1]
 
   proximos_a_eliminar.sort()
   
@@ -163,7 +165,7 @@ def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
     
     
 
-  return matriz_proximo_eliminado
+  return matriz_proximo_eliminado,claveDescomposicion
 
 
 
@@ -195,37 +197,50 @@ def conversorClaveAEstadosEliminar(lista):
     columnas_a_eliminar_actual = []
 
     # Procesar las primeras 3 posiciones de la lista
-    if lista[:3] != [0, 0, 0]:
+    if lista[:3] != (0, 0, 0):
       for i in range(3):
           if lista[i] == 0:
              proximos_a_eliminar_origin.append(i)
+    else:
+      proximos_a_eliminar_origin.append(5)
 
     # Procesar las últimas 3 posiciones de la lista
-    if lista[3:] != [0, 0, 0]:
+    if lista[3:] != (0, 0, 0):
       for i in range(3, 6):
           if lista[i] == 0:
               columnas_a_eliminar_actual.append(i - 3)
+    else:
+      columnas_a_eliminar_actual.append(5)
 
     return proximos_a_eliminar_origin, columnas_a_eliminar_actual
   
-def conversorEstadosEliminarAClave(proximos_a_eliminar, columnas_a_eliminar_actual):
-    lista_resultante = [1,1,1,1,1,1]
+def conversorEstadosEliminarAClave(proximos_a_eliminar, columnas_a_eliminar_actual, estadoACtual):
+    lista_resultante = [1, 1, 1, 1, 1, 1]
 
-    if proximos_a_eliminar != []:
+    if len(proximos_a_eliminar)>0 and proximos_a_eliminar[0]!=5:
       for i in proximos_a_eliminar:
           lista_resultante[i] = 0
-    else:
-      lista_resultante[:3]= [0, 0, 0]
 
-    if columnas_a_eliminar_actual != []:
-      for i in columnas_a_eliminar_actual:
-          lista_resultante[i + 3] = 0
-    else:
-      lista_resultante[3:]= [0, 0, 0]
-      
+    if len(columnas_a_eliminar_actual)>0 and columnas_a_eliminar_actual[0]!=5:
+      for j in columnas_a_eliminar_actual:
+          lista_resultante[j + 3] = 0
+
+    # Añadir ceros si las listas están vacías
+    if not proximos_a_eliminar:
+        lista_resultante[:3] = [1,1,1]
+    elif proximos_a_eliminar[0]==5:
+        lista_resultante[:3] = [0,0,0]
+
+
+    if not columnas_a_eliminar_actual and len(estadoACtual)==3:
+        lista_resultante[3:] = [1,1,1]
+    elif columnas_a_eliminar_actual[0]==5:
+        lista_resultante[3:] = [0,0,0]
+
     return lista_resultante
 
 def productoTensor(resultado_en_tuplas):
+  resultado = []
   if len(resultado_en_tuplas) == 2:
     print("TOTAL DE LOS TOTALES")
     for elemento_1 in resultado_en_tuplas[0]:
@@ -243,117 +258,155 @@ def productoTensor(resultado_en_tuplas):
       
 
 
-# P(BC | C = 100)
+def calculoProbabilidadComposicion(columnas_a_eliminar_actual,proximos_a_eliminar,estadoActual):
+  if  len(str(estadoActual)) == 3 and (len(proximos_a_eliminar) == 0 or proximos_a_eliminar[0]!=5) and len(columnas_a_eliminar_actual) >0 and columnas_a_eliminar_actual[0] != 5:
+      claveDescomposicion = [1,1,1,1,1,1]
+      matrizMarginadoProximos,claveDescomposicion = marginacionEstadoProximo(proximos_a_eliminar,claveDescomposicion)
+      posicionSolucion = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
+      
+      mi_tupla_clave = tuple(claveDescomposicion)
+      diccionarioDescomposicion[mi_tupla_clave] = matrizMarginadoProximos[posicionSolucion]
+      print("SOLUCION :")
+      print(matrizMarginadoProximos[posicionSolucion])
+      return matrizMarginadoProximos[posicionSolucion]
+      
+  #Proceso cuando hay un vacio en estado actual   
+  elif len(columnas_a_eliminar_actual)>0 and columnas_a_eliminar_actual[0] == 5:
+      claveDescomposicion = [1,1,1,0,0,0]
+      matrizMarginadoProximos,claveDescomposicion = marginacionEstadoProximo(proximos_a_eliminar,claveDescomposicion)
+      resultadoVacioActual= eliminarVacioActual(matrizMarginadoProximos)
+      
+      mi_tupla_clave = tuple(claveDescomposicion)
+      diccionarioDescomposicion[mi_tupla_clave] = resultadoVacioActual
+      print("TOTAL cuando hay un vacio en estado actual")
+      print(resultadoVacioActual)
+      return resultadoVacioActual
 
-#posicionEstadoActual = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
+  #Proceso cuando hay un vacio en estado proximo  
+  elif len(proximos_a_eliminar) > 0 and proximos_a_eliminar[0]==5:
+      claveDescomposicion = [0,0,0,1,1,1]
+      combinacion, matriz,claveDescomposicion =  marginacionEstadoActual(columnas_a_eliminar_actual, trans_matrix,claveDescomposicion)
+      resultadoVacioProximo= eliminarVacioProximo(matriz)
+      posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
+      
+      mi_tupla_clave = tuple(claveDescomposicion)
+      diccionarioDescomposicion[mi_tupla_clave] = resultadoVacioProximo[posicionSolucion]
+      print("Matriz resultante cuando hay un vacio en estado proximo ")
+      print(resultadoVacioProximo)
+      print("TOTAL cuando hay un vacio en estado proximo")
+      print(resultadoVacioProximo[posicionSolucion])
+      return resultadoVacioProximo[posicionSolucion]
 
-estadoActual = "10"
-proximos_a_eliminar_origin = [0] #[0,1,0]
-columnas_a_eliminar_actual = [1]   #[0,1,1]
+      
+  else:
+      listaSolucion = []
+      estadosProximoTotales = [0,1,2]
+
+      set_eliminar = set(proximos_a_eliminar)
+      set_estados = set(estadosProximoTotales)
+      # Obtener los valores que no se repiten en ambas listas
+      estadoProximosCalcular = list(set_estados - set_eliminar)
+
+      print(estadoProximosCalcular)
+
+
+      for proximos_a_eliminarInt in estadoProximosCalcular:
+        
+        claveDescomposicion = [1,1,1,1,1,1]
+          
+
+        if len(estadoProximosCalcular) == 1: 
+          proximos_a_eliminar = proximos_a_eliminar
+        else:
+          proximos_a_eliminar.append(proximos_a_eliminarInt)
+          print(proximos_a_eliminar)
+      
+
+        
+        matrizMarginadoProximos,claveDescomposicion = marginacionEstadoProximo(proximos_a_eliminar,claveDescomposicion) 
+        combinacion, matriz,claveDescomposicion =  marginacionEstadoActual(columnas_a_eliminar_actual, matrizMarginadoProximos,claveDescomposicion)
+
+        posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
+        print("SOLUCION PARCIAL------------------------------------------------------:")
+        
+        print(matriz[posicionSolucion])
+
+        mi_tupla_clave = tuple(claveDescomposicion)
+        diccionarioDescomposicion[mi_tupla_clave] = matriz[posicionSolucion]
+        
+        listaSolucion.append(matriz[posicionSolucion])
+    
+        proximos_a_eliminar = proximos_a_eliminar_origin.copy()
+
+
+
+
+        matrizResultante = juntarProximosRepetidos(eliminar_proximos_sin_usar(combinaciones,proximos_a_eliminar))
+        print(matrizResultante)
+
+        print("Solucion SUBTOTAL para aplicar tensor")
+
+        # Convertir los arrays en tuplas
+        resultado_en_tuplas = [tuple(arr) for arr in listaSolucion]
+
+        print(resultado_en_tuplas)
+
+
+        if len(estadoProximosCalcular) == 1: 
+          resultado = matriz[posicionSolucion]
+        else:
+          resultado = productoTensor(resultado_en_tuplas)
+          
+      
+      return resultado
+    
+
+def calcularNuevoEstado(estadoActual,columnas_a_eliminar_actual_original,columnas_a_eliminar_actual):
+  diccionarioEstadoUsar = {}
+
+  estados = [0,1,2]
+
+  cont = 0
+  for estado in estados:
+      if estado in columnas_a_eliminar_actual_original:
+          diccionarioEstadoUsar[estado]= "null"
+      else:
+          diccionarioEstadoUsar[estado]= estadoActual[cont]
+          cont += 1
+
+  set_eliminar = set(columnas_a_eliminar_actual)
+  set_estados = set(estados)
+  # Obtener los valores que no se repiten en ambas listas
+  estadoProximo = list(set_estados - set_eliminar)
+  valores = [diccionarioEstadoUsar[clave] for clave in estadoProximo]
+
+  # Unir los valores en un string
+  resultado = ''.join(valores)
+
+  return resultado
+      
+# ----------------------------------------------------------------------------------------------
+estadoActualOriginal = "10"
+proximos_a_eliminar_origin = [1,2]  #abc/abc = 100 [1,1,1,1,1,1]    /abc [1,1,1,0,0,0]
+columnas_a_eliminar_actual_original = [2]
+
+estadoActual = estadoActualOriginal
+columnas_a_eliminar_actual = columnas_a_eliminar_actual_original.copy()   
 proximos_a_eliminar = proximos_a_eliminar_origin.copy() # BC   C/C
+
+emd_distance_min = 10000000000
+descomposicionOptima = ""
 
 
 diccionarioDescomposicion = {}
 claveDescomposicion = [1,1,1,1,1,1]
 
-if len(str(estadoActual)) == 3:
-    claveDescomposicion = [1,1,1,1,1,1]
-    matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar)
-    posicionSolucion = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
-    print("SOLUCION :")
-    print(matrizMarginadoProximos[posicionSolucion])
-    
-#Proceso cuando hay un vacio en estado actual   
-elif not columnas_a_eliminar_actual:
-    matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar)
-    resultadoVacioActual= eliminarVacioActual(matrizMarginadoProximos)
-    print("TOTAL cuando hay un vacio en estado actual")
-    print(resultadoVacioActual)
 
-#Proceso cuando hay un vacio en estado proximo  
-elif not proximos_a_eliminar:
-    combinacion, matriz =  marginacionEstadoActual(columnas_a_eliminar_actual, trans_matrix)
-    resultadoVacioProximo= eliminarVacioProximo(matriz)
-    posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
-    print("Matriz resultante cuando hay un vacio en estado proximo ")
-    print(resultadoVacioProximo)
-    print("TOTAL cuando hay un vacio en estado proximo")
-    print(resultadoVacioProximo[posicionSolucion])
-
-    
-else:
-    listaSolucion = []
-    estadosProximoTotales = [0,1,2]
-
-    set_eliminar = set(proximos_a_eliminar)
-    set_estados = set(estadosProximoTotales)
-    # Obtener los valores que no se repiten en ambas listas
-    estadoProximosCalcular = list(set_estados - set_eliminar)
-
-    print(estadoProximosCalcular)
+distribucionOriginal = calculoProbabilidadComposicion(columnas_a_eliminar_actual,proximos_a_eliminar,estadoActual)
+print("ORIGINAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL", distribucionOriginal)
 
 
-    for proximos_a_eliminarInt in estadoProximosCalcular:
-      
-      claveDescomposicion = [1,1,1,1,1,1]
-        
-
-      if len(estadoProximosCalcular) == 1: 
-        proximos_a_eliminar = proximos_a_eliminar
-      else:
-        proximos_a_eliminar.append(proximos_a_eliminarInt)
-        print(proximos_a_eliminar)
-    
-
-      
-      matrizMarginadoProximos = marginacionEstadoProximo(proximos_a_eliminar) 
-      combinacion, matriz =  marginacionEstadoActual(columnas_a_eliminar_actual, matrizMarginadoProximos)
-
-      posicionSolucion = combinacion.index(tuple(int(d) for d in str(estadoActual)))
-      print("SOLUCION PARCIAL------------------------------------------------------:")
-      
-      print(matriz[posicionSolucion])
-
-      mi_tupla_clave = tuple(claveDescomposicion)
-      diccionarioDescomposicion[mi_tupla_clave] = matriz[posicionSolucion]
-      
-      listaSolucion.append(matriz[posicionSolucion])
-   
-      proximos_a_eliminar = proximos_a_eliminar_origin.copy()
-
-
-
-
-      matrizResultante = juntarProximosRepetidos(eliminar_proximos_sin_usar(combinaciones,proximos_a_eliminar))
-      print(matrizResultante)
-
-      print("Solucion SUBTOTAL para aplicar tensor")
-
-      # Convertir los arrays en tuplas
-      resultado_en_tuplas = [tuple(arr) for arr in listaSolucion]
-
-      print(resultado_en_tuplas)
-
-
-      
-      resultado = []
-
-      print(productoTensor(resultado_en_tuplas))
-      
-
-print("LISTA DE DESCOMPOSICIONES REALIZADAS")
-
-for clave, valor in diccionarioDescomposicion.items():
-    print(f"{clave}:")
-    for fila in valor:
-           print(f"\t{fila}")
-    print()
-    
-    
-    
-
-
-claveDistribucionOriginal =  conversorEstadosEliminarAClave(proximos_a_eliminar_origin, columnas_a_eliminar_actual)  
+claveDistribucionOriginal =  conversorEstadosEliminarAClave(proximos_a_eliminar_origin, columnas_a_eliminar_actual,estadoActual)  
 
 particiones = generarListaDescomposiciones(claveDistribucionOriginal)
 
@@ -370,14 +423,63 @@ for particion in particiones:
         
         listSubResultadosParticionados.append(valor)
       else:
-        proximos_a_eliminar_origin = []
+        proximos_a_eliminar = []
         columnas_a_eliminar_actual = []
         
-        proximos_a_eliminar_origin, columnas_a_eliminar_actual = conversorClaveAEstadosEliminar(parteCombinacionEntrante)
-        proximos_a_eliminar = proximos_a_eliminar_origin.copy()
+        proximos_a_eliminar, columnas_a_eliminar_actual = conversorClaveAEstadosEliminar(parteCombinacionEntrante)
+        
+        estadoActual = calcularNuevoEstado(estadoActualOriginal,columnas_a_eliminar_actual_original,columnas_a_eliminar_actual)
+        
+        listSubResultadosParticionados.append(calculoProbabilidadComposicion(columnas_a_eliminar_actual,proximos_a_eliminar,estadoActual))
+
+    print("LISTA PARA HACER TENSOR: ")
+    resultado_en_tuplas = [tuple(arr) for arr in listSubResultadosParticionados]
+    
+    productoTensorComposicion = productoTensor(resultado_en_tuplas)
+    
+    emd_distance = wasserstein_distance(distribucionOriginal, productoTensorComposicion)
+    print("EMD:",emd_distance)
+    
+    if emd_distance == 0:
+      emd_distance_min = emd_distance
+      descomposicionOptima = particion
+      break
+      
+    elif emd_distance < emd_distance_min:
+      emd_distance_min = emd_distance
+      descomposicionOptima = particion
+      
+      
+print("SOLUCION OPTMIA: ")
+print(emd_distance_min)
+print("------------")
+print(descomposicionOptima)
+      
+ 
+    
+    
+    
+    
+    
+print("LISTA DE DESCOMPOSICIONES REALIZADAS")
+
+for clave, valor in diccionarioDescomposicion.items():
+    print(f"{clave}:")
+    for fila in valor:
+           print(f"\t{fila}")
+    print()
+    
+    
+    
+
+
+
 
 
     
 #resultado = []
 #listaSolucion = [(0.5, 0.5), (1.0, 0.0)]
 #print(productoTensor(listaSolucion))
+
+
+
