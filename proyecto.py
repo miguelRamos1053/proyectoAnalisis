@@ -165,14 +165,36 @@ def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
 
   return matriz_proximo_eliminado
 
+def conversorClaveAEstadosEliminar(parteCombinacionEntrante):
+  proximos_a_eliminar_origin = []
+  columnas_a_eliminar_actual = []
+  for indice, estado in enumerate(parteCombinacionEntrante):
+    if indice < 3:
+      if estado == 0:
+        proximos_a_eliminar_origin.append(indice)
+    else:
+      if estado == 0:
+        columnas_a_eliminar_actual.append(indice-3)
+        
+  if(len(columnas_a_eliminar_actual) == 3):
+    columnas_a_eliminar_actual = []
+    
+  if(len(proximos_a_eliminar_origin) == 3):
+    proximos_a_eliminar_origin = []
+    
+  
+  return proximos_a_eliminar_origin, columnas_a_eliminar_actual
+    
+      
+
 
 # P(BC | C = 100)
 
-estadoActual = "1"
+estadoActual = "10"
 #posicionEstadoActual = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
 
-proximos_a_eliminar_origin = [0,2]
-columnas_a_eliminar_actual = []
+proximos_a_eliminar_origin = [0,2] 
+columnas_a_eliminar_actual = [0]
 
 
 proximos_a_eliminar = proximos_a_eliminar_origin.copy() # BC   C/C
@@ -282,12 +304,6 @@ else:
 
       else:
         print(resultado_en_tuplas)
-        
-
-
-
-
-
 
 print("LISTA DE DESCOMPOSICIONES REALIZADAS")
 
@@ -296,4 +312,30 @@ for clave, valor in diccionarioDescomposicion.items():
     for fila in valor:
            print(f"\t{fila}")
     print()
+    
+    
+
+particiones = [
+  [[0, 1, 0, 0, 1, 1],[0, 0, 0, 0, 1, 1]],
+]
+
+for particion in particiones:
+    for lista in particion:
+      listSubResultadosParticionados = []
+      
+      parteCombinacionEntrante = tuple(lista)
+      
+      if parteCombinacionEntrante in diccionarioDescomposicion:
+        valor = diccionarioDescomposicion[parteCombinacionEntrante]
+        listSubResultadosParticionados.append(valor)
+      else:
+        print("lastima, trabaje papu")
+        proximos_a_eliminar_origin = []
+        columnas_a_eliminar_actual = []
+        
+        proximos_a_eliminar_origin, columnas_a_eliminar_actual = conversorClaveAEstadosEliminar(parteCombinacionEntrante)
+        proximos_a_eliminar = proximos_a_eliminar_origin.copy()
+
+
+    
 
