@@ -165,26 +165,7 @@ def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
 
   return matriz_proximo_eliminado
 
-def conversorClaveAEstadosEliminar(parteCombinacionEntrante): #[0,1,1,0,0,0]
-  proximos_a_eliminar_origin = []
-  columnas_a_eliminar_actual = []
-  
-  for indice, estado in enumerate(parteCombinacionEntrante):#[]
-    if indice < 3:
-      if estado == 0:
-        proximos_a_eliminar_origin.append(indice)
-    else:
-      if estado == 0:
-        columnas_a_eliminar_actual.append(indice-3)
-        
-  if(len(columnas_a_eliminar_actual) == 3):
-    columnas_a_eliminar_actual = []
-    
-  if(len(proximos_a_eliminar_origin) == 3):
-    proximos_a_eliminar_origin = []
-    
-  
-  return proximos_a_eliminar_origin, columnas_a_eliminar_actual
+
 
 def generarListaDescomposiciones(lista):
     ones = [i for i, x in enumerate(lista) if x == 1]
@@ -208,6 +189,24 @@ def generarListaDescomposiciones(lista):
                 results.append([sub1, sub2])
         
     return results
+  
+def conversorClaveAEstadosEliminar(lista):
+    proximos_a_eliminar_origin  = []
+    columnas_a_eliminar_actual = []
+
+    # Procesar las primeras 3 posiciones de la lista
+    if lista[:3] != [0, 0, 0]:
+      for i in range(3):
+          if lista[i] == 0:
+             proximos_a_eliminar_origin.append(i)
+
+    # Procesar las últimas 3 posiciones de la lista
+    if lista[3:] != [0, 0, 0]:
+      for i in range(3, 6):
+          if lista[i] == 0:
+              columnas_a_eliminar_actual.append(i - 3)
+
+    return proximos_a_eliminar_origin, columnas_a_eliminar_actual
     
       
 
