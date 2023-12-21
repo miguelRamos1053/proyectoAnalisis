@@ -165,10 +165,11 @@ def marginacionEstadoProximo(proximos_a_eliminar): #  ?/ABC  [?,?,?,1,1,1]
 
   return matriz_proximo_eliminado
 
-def conversorClaveAEstadosEliminar(parteCombinacionEntrante):
+def conversorClaveAEstadosEliminar(parteCombinacionEntrante): #[0,1,1,0,0,0]
   proximos_a_eliminar_origin = []
   columnas_a_eliminar_actual = []
-  for indice, estado in enumerate(parteCombinacionEntrante):
+  
+  for indice, estado in enumerate(parteCombinacionEntrante):#[]
     if indice < 3:
       if estado == 0:
         proximos_a_eliminar_origin.append(indice)
@@ -184,6 +185,29 @@ def conversorClaveAEstadosEliminar(parteCombinacionEntrante):
     
   
   return proximos_a_eliminar_origin, columnas_a_eliminar_actual
+
+def generarListaDescomposiciones(lista):
+    ones = [i for i, x in enumerate(lista) if x == 1]
+    n = len(ones)
+    
+    results = []
+    for i in range(2**n):
+        sub1 = lista[:] 
+        sub2 = lista[:]
+        
+        for j in range(n):
+            if (i >> j) % 2 == 1:
+                sub1[ones[j]] = 0
+                sub2[ones[j]] = 1
+            else: 
+                sub1[ones[j]] = 1
+                sub2[ones[j]] = 0
+        
+        if sub1.count(1) > 0 and sub2.count(1) > 0:
+            if [sub2, sub1] not in results:
+                results.append([sub1, sub2])
+        
+    return results
     
       
 
@@ -193,8 +217,8 @@ def conversorClaveAEstadosEliminar(parteCombinacionEntrante):
 estadoActual = "10"
 #posicionEstadoActual = combinaciones.index(tuple(int(d) for d in str(estadoActual)))
 
-proximos_a_eliminar_origin = [0,2] 
-columnas_a_eliminar_actual = [0]
+proximos_a_eliminar_origin = [] #[0,1,0]
+columnas_a_eliminar_actual = [1]   #[0,1,1]
 
 
 proximos_a_eliminar = proximos_a_eliminar_origin.copy() # BC   C/C
@@ -314,22 +338,24 @@ for clave, valor in diccionarioDescomposicion.items():
     print()
     
     
+    
+  
 
 particiones = [
   [[0, 1, 0, 0, 1, 1],[0, 0, 0, 0, 1, 1]],
 ]
 
 for particion in particiones:
+    listSubResultadosParticionados = []
     for lista in particion:
-      listSubResultadosParticionados = []
       
       parteCombinacionEntrante = tuple(lista)
       
       if parteCombinacionEntrante in diccionarioDescomposicion:
         valor = diccionarioDescomposicion[parteCombinacionEntrante]
+        
         listSubResultadosParticionados.append(valor)
       else:
-        print("lastima, trabaje papu")
         proximos_a_eliminar_origin = []
         columnas_a_eliminar_actual = []
         
@@ -338,4 +364,3 @@ for particion in particiones:
 
 
     
-
